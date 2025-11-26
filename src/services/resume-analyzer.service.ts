@@ -22,23 +22,61 @@ export class ResumeAnalyzerService {
       const reader = new FileReader();
 
       reader.onload = (e) => {
-        const text = e.target?.result as string;
+        const result = e.target?.result;
 
-        if (file.type === 'application/pdf') {
-          resolve(text);
+        if (typeof result === 'string') {
+          const cleanedText = this.extractTextContent(result, file.type);
+          resolve(cleanedText);
+        } else if (result instanceof ArrayBuffer) {
+          const text = this.arrayBufferToString(result);
+          const cleanedText = this.extractTextContent(text, file.type);
+          resolve(cleanedText);
         } else {
-          resolve(text);
+          reject(new Error('Unable to read file content'));
         }
       };
 
       reader.onerror = () => reject(new Error('Failed to read file'));
 
-      if (file.type === 'text/plain') {
-        reader.readAsText(file);
+      if (file.type === 'application/pdf' || file.type === 'application/octet-stream') {
+        reader.readAsArrayBuffer(file);
       } else {
-        reader.readAsText(file);
+        reader.readAsText(file, 'UTF-8');
       }
     });
+  }
+
+  private arrayBufferToString(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
+    let text = '';
+
+    for (let i = 0; i < bytes.length; i++) {
+      const byte = bytes[i];
+      if (byte >= 32 && byte <= 126) {
+        text += String.fromCharCode(byte);
+      } else if (byte === 10 || byte === 13) {
+        text += ' ';
+      } else if (byte === 9) {
+        text += ' ';
+      }
+    }
+
+    return text;
+  }
+
+  private extractTextContent(text: string, fileType: string): string {
+    let cleaned = text;
+
+    cleaned = cleaned.replace(/[^\x20-\x7E\n\r]/g, ' ');
+
+    cleaned = cleaned.split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .join('\n');
+
+    cleaned = cleaned.replace(/\\s+/g, ' ').trim();
+
+    return cleaned;
   }
 
   async analyzeResume(resumeText: string, jobDescription: string): Promise<AnalysisResult> {

@@ -20,60 +20,41 @@ interface AnalysisResult {
   summary: string;
 }
 
-const SKILL_DATABASE = {
-  frontend: [
-    'angular', 'react', 'vue', 'svelte', 'next.js', 'nextjs', 'nuxt', 'ember',
-    'html', 'css', 'javascript', 'typescript', 'jsx', 'tsx',
-    'responsive design', 'material design', 'bootstrap', 'tailwind', 'sass', 'scss', 'less',
-    'webpack', 'vite', 'parcel', 'rollup', 'gulp', 'grunt',
-    'redux', 'mobx', 'zustand', 'recoil', 'context api', 'vuex', 'pinia',
-    'rxjs', 'observables', 'promises', 'async/await'
-  ],
-  backend: [
-    'node.js', 'nodejs', 'express', 'nest.js', 'nestjs', 'fastify', 'koa',
-    'python', 'django', 'flask', 'fastapi', 'celery',
-    'java', 'spring', 'spring boot', 'maven', 'gradle',
-    'c#', 'csharp', '.net', 'asp.net', 'entity framework',
-    'ruby', 'rails', 'sinatra',
-    'go', 'rust', 'php', 'laravel', 'symfony',
-    'rest api', 'graphql', 'grpc', 'websockets', 'socket.io'
-  ],
-  database: [
-    'sql', 'mysql', 'postgresql', 'oracle', 'mssql', 'sqlite',
-    'mongodb', 'nosql', 'firebase', 'firestore', 'dynamodb',
-    'supabase', 'redis', 'elasticsearch', 'cassandra', 'couchdb',
-    'database design', 'orm', 'sql queries', 'indexing', 'normalization'
-  ],
-  devops: [
-    'docker', 'kubernetes', 'k8s', 'containerization',
-    'aws', 'azure', 'gcp', 'google cloud', 'heroku',
-    'ci/cd', 'cicd', 'jenkins', 'github actions', 'gitlab ci', 'circleci',
-    'terraform', 'ansible', 'cloudformation',
-    'linux', 'bash', 'shell scripting', 'git', 'github', 'gitlab',
-    'monitoring', 'logging', 'prometheus', 'grafana', 'elk'
-  ],
-  testing: [
-    'testing', 'unit testing', 'integration testing', 'e2e testing',
-    'jest', 'mocha', 'jasmine', 'vitest', 'playwright',
-    'cypress', 'selenium', 'puppeteer', 'testcafe',
-    'junit', 'pytest', 'unittest', 'rspec',
-    'tdd', 'bdd', 'test coverage'
-  ],
-  tools: [
-    'git', 'github', 'gitlab', 'bitbucket',
-    'jira', 'confluence', 'slack', 'asana', 'trello',
-    'vscode', 'sublime', 'intellij', 'webstorm',
-    'figma', 'sketch', 'adobe xd', 'photoshop', 'illustrator',
-    'postman', 'insomnia', 'swagger', 'api documentation'
-  ],
-  softSkills: [
-    'leadership', 'communication', 'teamwork', 'collaboration',
-    'problem solving', 'critical thinking', 'analytical',
-    'project management', 'agile', 'scrum', 'kanban',
-    'time management', 'attention to detail', 'mentoring',
-    'negotiation', 'stakeholder management', 'presentation'
-  ]
-};
+const SKILL_KEYWORDS = [
+  'angular', 'react', 'vue', 'svelte', 'next', 'nuxt', 'ember',
+  'html', 'html5', 'css', 'css3', 'javascript', 'js', 'typescript', 'ts',
+  'responsive', 'bootstrap', 'tailwind', 'sass', 'scss', 'less',
+  'webpack', 'vite', 'parcel', 'rollup', 'gulp',
+  'redux', 'mobx', 'zustand', 'recoil', 'context',
+  'rxjs', 'observable', 'promise', 'async', 'await',
+  'nodejs', 'express', 'nest', 'fastify', 'koa',
+  'python', 'django', 'flask', 'fastapi',
+  'java', 'spring', 'maven', 'gradle',
+  'csharp', 'dotnet', 'asp',
+  'ruby', 'rails',
+  'go', 'rust', 'php', 'laravel',
+  'rest', 'graphql', 'grpc', 'websocket', 'socket',
+  'sql', 'mysql', 'postgresql', 'postgres', 'oracle', 'mssql', 'sqlite',
+  'mongodb', 'mongo', 'nosql', 'firebase', 'firestore', 'dynamodb',
+  'supabase', 'redis', 'elasticsearch', 'cassandra',
+  'docker', 'kubernetes', 'k8s',
+  'aws', 'azure', 'gcp', 'heroku', 'vercel', 'netlify',
+  'cicd', 'jenkins', 'github', 'gitlab', 'bitbucket',
+  'terraform', 'ansible', 'cloudformation',
+  'linux', 'bash', 'shell', 'git',
+  'testing', 'jest', 'mocha', 'jasmine', 'vitest', 'playwright', 'cypress',
+  'selenium', 'puppeteer', 'protractor',
+  'junit', 'pytest', 'unittest', 'rspec',
+  'tdd', 'bdd', 'coverage',
+  'jira', 'confluence', 'slack', 'asana', 'trello',
+  'vscode', 'intellij', 'webstorm', 'visual studio',
+  'figma', 'sketch', 'adobe', 'photoshop',
+  'postman', 'insomnia', 'swagger', 'api',
+  'material', 'antd', 'chakra',
+  'leadership', 'communication', 'teamwork', 'collaboration',
+  'agile', 'scrum', 'kanban', 'waterfall',
+  'project', 'management', 'mentoring', 'training'
+];
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -96,12 +77,13 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const analysis = analyzeResume(resumeText, jobDescription);
+    const analysis = performAIAnalysis(resumeText, jobDescription);
 
     return new Response(JSON.stringify(analysis), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
+    console.error('Analysis Error:', error);
     return new Response(
       JSON.stringify({ error: error.message || "Analysis failed" }),
       {
@@ -112,183 +94,242 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-function analyzeResume(resumeText: string, jobDescription: string): AnalysisResult {
-  const resumeLower = resumeText.toLowerCase();
-  const jobDescLower = jobDescription.toLowerCase();
+function performAIAnalysis(resumeText: string, jobDescription: string): AnalysisResult {
+  const resume = normalizeText(resumeText);
+  const jobDesc = normalizeText(jobDescription);
 
-  const jobSkills = extractAllSkills(jobDescLower);
-  const resumeSkills = extractAllSkills(resumeLower);
+  const jobSkills = extractSkills(jobDesc);
+  const resumeSkills = extractSkills(resume);
 
   const matchedSkills: string[] = [];
   const missingSkills: string[] = [];
 
-  jobSkills.forEach((skill) => {
-    if (resumeSkills.includes(skill)) {
+  for (const skill of jobSkills) {
+    const skillMatched = resumeSkills.some(rs => compareSkills(rs, skill));
+    if (skillMatched) {
       matchedSkills.push(skill);
     } else {
       missingSkills.push(skill);
     }
-  });
+  }
 
   const matchPercentage = jobSkills.length > 0
     ? Math.round((matchedSkills.length / jobSkills.length) * 100)
     : 0;
 
-  const strengths = identifyStrengths(resumeLower, matchedSkills, resumeSkills);
+  const strengths = analyzeStrengths(resume, matchedSkills, resumeSkills);
   const recommendations = generateRecommendations(missingSkills, matchPercentage);
-  const summary = generateSummary(matchPercentage, matchedSkills.length, missingSkills.length);
+  const summary = createSummary(matchPercentage, matchedSkills.length, jobSkills.length);
 
   return {
     matchPercentage,
-    matchedSkills: Array.from(new Set(matchedSkills)),
-    missingSkills: Array.from(new Set(missingSkills)),
+    matchedSkills: [...new Set(matchedSkills)],
+    missingSkills: [...new Set(missingSkills)],
     strengths,
     recommendations,
     summary,
   };
 }
 
-function extractAllSkills(text: string): string[] {
+function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s./+#()-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractSkills(text: string): string[] {
   const skills = new Set<string>();
 
-  const allSkills = Object.values(SKILL_DATABASE).flat();
-
-  for (const skill of allSkills) {
-    const skillRegex = new RegExp(`\\b${skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-    if (skillRegex.test(text)) {
-      skills.add(skill.charAt(0).toUpperCase() + skill.slice(1));
+  for (const keyword of SKILL_KEYWORDS) {
+    if (text.includes(keyword)) {
+      skills.add(formatSkillName(keyword));
     }
   }
 
-  const lines = text.split(/[\n\r]+/);
-  for (const line of lines) {
-    const skillTokens = parseLineForSkills(line);
-    skillTokens.forEach(token => skills.add(token));
+  const phrases = text.split(/[,;:|]/)
+    .map(p => p.trim())
+    .filter(p => p.length > 2 && p.length < 50);
+
+  for (const phrase of phrases) {
+    const words = phrase.split(/\s+/);
+    if (words.length <= 3) {
+      const cleaned = cleanPhrase(phrase);
+      if (cleaned && !isCommon(cleaned) && !skills.has(cleaned)) {
+        skills.add(cleaned);
+      }
+    }
   }
 
   return Array.from(skills);
 }
 
-function parseLineForSkills(line: string): string[] {
-  const skills: string[] = [];
-  const phrases = line.split(/[,;:|]/);
+function formatSkillName(keyword: string): string {
+  const mapping: Record<string, string> = {
+    'nodejs': 'Node.js',
+    'js': 'JavaScript',
+    'ts': 'TypeScript',
+    'csharp': 'C#',
+    'dotnet': '.NET',
+    'asp': 'ASP.NET',
+    'postgres': 'PostgreSQL',
+    'cicd': 'CI/CD',
+    'k8s': 'Kubernetes',
+    'rxjs': 'RxJS',
+    'observable': 'Observables',
+    'async': 'Async/Await',
+    'websocket': 'WebSockets',
+    'rest': 'REST API',
+    'graphql': 'GraphQL',
+  };
 
-  for (const phrase of phrases) {
-    const trimmed = phrase.trim();
+  if (mapping[keyword]) {
+    return mapping[keyword];
+  }
 
-    if (trimmed.length > 2 && trimmed.length < 50) {
-      const words = trimmed.split(/\s+/).filter(w => w.length > 2);
+  return keyword.split(/[-./+#]/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
 
-      if (words.length <= 3) {
-        const candidate = words.join(' ');
-        if (/^[a-zA-Z0-9.+#()/\-*&]+$/.test(candidate) && !isCommonWord(candidate)) {
-          const capitalized = candidate.split(' ')
-            .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-            .join(' ');
-          skills.push(capitalized);
+function compareSkills(skill1: string, skill2: string): boolean {
+  const s1 = skill1.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const s2 = skill2.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  if (s1 === s2) return true;
+  if (s1.includes(s2) || s2.includes(s1)) return true;
+
+  const similarity = calculateSimilarity(s1, s2);
+  return similarity > 0.8;
+}
+
+function calculateSimilarity(str1: string, str2: string): number {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+
+  if (longer.length === 0) return 1.0;
+
+  const editDistance = getEditDistance(longer, shorter);
+  return (longer.length - editDistance) / longer.length;
+}
+
+function getEditDistance(s1: string, s2: string): number {
+  const costs: number[] = [];
+
+  for (let i = 0; i <= s1.length; i++) {
+    let lastValue = i;
+    for (let j = 0; j <= s2.length; j++) {
+      if (i === 0) {
+        costs[j] = j;
+      } else if (j > 0) {
+        let newValue = costs[j - 1];
+        if (s1.charAt(i - 1) !== s2.charAt(j - 1)) {
+          newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
         }
+        costs[j - 1] = lastValue;
+        lastValue = newValue;
       }
     }
+    if (i > 0) costs[s2.length] = lastValue;
   }
 
-  return skills;
+  return costs[s2.length];
 }
 
-function isCommonWord(word: string): boolean {
-  const commonWords = [
-    'the', 'and', 'or', 'if', 'is', 'are', 'was', 'be', 'been', 'have', 'has', 'had',
-    'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might',
-    'must', 'can', 'with', 'from', 'for', 'by', 'to', 'of', 'in', 'on', 'at',
-    'required', 'must', 'should', 'nice', 'good', 'strong', 'excellent',
-    'skills', 'experience', 'knowledge', 'proficiency', 'understanding'
+function cleanPhrase(phrase: string): string {
+  const cleaned = phrase.replace(/[^a-z0-9\s/+#-]/g, '').trim();
+  if (cleaned.length < 2 || cleaned.length > 40) return '';
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
+function isCommon(word: string): boolean {
+  const common = [
+    'the', 'and', 'or', 'is', 'are', 'be', 'have', 'with', 'from', 'for',
+    'by', 'to', 'of', 'in', 'on', 'at', 'as', 'experience', 'education',
+    'skills', 'required', 'preferred', 'ability', 'strong', 'excellent',
+    'knowledge', 'proficiency', 'understanding', 'familiar', 'degree',
+    'years', 'role', 'position', 'job'
   ];
-  return commonWords.includes(word.toLowerCase());
+  return common.includes(word.toLowerCase());
 }
 
-function identifyStrengths(resumeText: string, matchedSkills: string[], resumeSkills: string[]): string[] {
+function analyzeStrengths(resume: string, matched: string[], allResumeSkills: string[]): string[] {
   const strengths: string[] = [];
 
-  if (matchedSkills.length >= 10) {
-    strengths.push(`Outstanding match with ${matchedSkills.length} required skills`);
-  } else if (matchedSkills.length >= 6) {
-    strengths.push(`Strong match with ${matchedSkills.length} required skills`);
-  } else if (matchedSkills.length >= 3) {
-    strengths.push(`Good match with ${matchedSkills.length} required skills`);
+  if (matched.length >= 10) {
+    strengths.push(`Excellent match with ${matched.length} key requirements`);
+  } else if (matched.length >= 7) {
+    strengths.push(`Strong match with ${matched.length} required skills`);
+  } else if (matched.length >= 4) {
+    strengths.push(`Good alignment with ${matched.length} skills`);
+  } else if (matched.length > 0) {
+    strengths.push(`${matched.length} skill(s) match the requirements`);
   }
 
-  const extraSkills = resumeSkills.length - matchedSkills.length;
-  if (extraSkills > 0) {
-    strengths.push(`Additional ${extraSkills} bonus skills not required`);
+  const bonusSkills = allResumeSkills.length - matched.length;
+  if (bonusSkills > 8) {
+    strengths.push(`Additional ${bonusSkills} advanced skills`);
+  } else if (bonusSkills > 3) {
+    strengths.push(`${bonusSkills} extra skill(s) not required`);
   }
 
-  if (resumeText.includes('lead') || resumeText.includes('senior') || resumeText.includes('manager') || resumeText.includes('director')) {
-    strengths.push('Leadership and senior-level experience demonstrated');
+  if (resume.includes('lead') || resume.includes('senior') || resume.includes('manager')) {
+    strengths.push('Leadership experience shown');
   }
 
-  if ((resumeText.includes('project') || resumeText.includes('developed') || resumeText.includes('built')) && (resumeText.includes('team') || resumeText.includes('collaborated'))) {
-    strengths.push('Proven team collaboration on successful projects');
+  if ((resume.includes('built') || resume.includes('developed')) &&
+      (resume.includes('team') || resume.includes('project'))) {
+    strengths.push('Proven project delivery capability');
   }
 
-  if (resumeText.includes('bachelor') || resumeText.includes('master') || resumeText.includes('phd') || resumeText.includes('degree')) {
-    strengths.push('Strong academic qualifications');
+  if (resume.includes('certification') || resume.includes('certified')) {
+    strengths.push('Professional certifications');
   }
 
-  if (resumeText.includes('years') || resumeText.includes('experience')) {
-    const experienceMatch = resumeText.match(/(\d+)\+?\s+years/);
-    if (experienceMatch) {
-      strengths.push(`${experienceMatch[1]}+ years of professional experience`);
-    }
-  }
-
-  if (resumeText.includes('certification') || resumeText.includes('certified') || resumeText.includes('award')) {
-    strengths.push('Professional certifications and achievements');
-  }
-
-  return strengths.length > 0 ? strengths : ['Relevant skills and experience present'];
+  return strengths.length > 0 ? strengths : ['Candidate assessment complete'];
 }
 
-function generateRecommendations(missingSkills: string[], matchPercentage: number): string[] {
+function generateRecommendations(missing: string[], percentage: number): string[] {
   const recommendations: string[] = [];
 
-  if (matchPercentage >= 90) {
-    recommendations.push('Perfect fit - your profile strongly aligns with the role requirements');
-  } else if (matchPercentage >= 80) {
-    recommendations.push('Excellent candidate - highlight your matching expertise prominently');
-  } else if (matchPercentage >= 60) {
-    recommendations.push('Good alignment - emphasize your strongest matching skills in cover letter');
-  } else if (matchPercentage >= 40) {
-    recommendations.push('Moderate fit - focus on transferable skills and learning ability');
+  if (percentage >= 90) {
+    recommendations.push('Highly qualified - apply immediately');
+  } else if (percentage >= 80) {
+    recommendations.push('Excellent fit - strong candidate profile');
+  } else if (percentage >= 70) {
+    recommendations.push('Good candidate - highlight strengths');
+  } else if (percentage >= 50) {
+    recommendations.push('Moderate fit - emphasize transferable skills');
+  } else if (percentage >= 30) {
+    recommendations.push('Build experience in key areas first');
   } else {
-    recommendations.push('Consider gaining more experience in the core requirements before applying');
+    recommendations.push('Significant skill gap - consider training');
   }
 
-  if (missingSkills.length > 0 && missingSkills.length <= 3) {
-    const missing = missingSkills.slice(0, 3).map(s => s.toLowerCase()).join(', ');
-    recommendations.push(`Priority areas: ${missing}`);
-  } else if (missingSkills.length > 3) {
-    const missing = missingSkills.slice(0, 2).map(s => s.toLowerCase()).join(', ');
-    recommendations.push(`Top priority skills to develop: ${missing}`);
+  if (missing.length > 0 && missing.length <= 2) {
+    recommendations.push(`Learn: ${missing.slice(0, 2).join(', ')}`);
+  } else if (missing.length > 2) {
+    recommendations.push(`Focus on: ${missing.slice(0, 2).join(', ')}`);
   }
 
-  if (matchPercentage < 50) {
-    recommendations.push('Pursue training or certifications in key missing areas');
-  }
-
-  return recommendations.length > 0 ? recommendations : ['Continue building relevant experience'];
+  return recommendations;
 }
 
-function generateSummary(matchPercentage: number, matched: number, missing: number): string {
-  if (matchPercentage >= 90) {
-    return `Perfect match! Your resume demonstrates ${matched} of the required skills. You are highly qualified for this role.`;
-  } else if (matchPercentage >= 80) {
-    return `Excellent match with ${matched} matching skills. Only ${missing} skill(s) to potentially develop.`;
-  } else if (matchPercentage >= 70) {
-    return `Strong match with ${matched} relevant skills. Address ${missing} skill gap(s) to be fully qualified.`;
-  } else if (matchPercentage >= 50) {
-    return `Good match with ${matched} relevant skills. Develop ${missing} additional areas for better fit.`;
-  } else if (matchPercentage >= 30) {
-    return `Moderate match with ${matched} relevant skills. ${missing} key areas need significant development.`;
+function createSummary(percentage: number, matched: number, total: number): string {
+  if (percentage >= 90) {
+    return `Perfect match! ${matched}/${total} required skills found. Outstanding candidate.`;
+  } else if (percentage >= 80) {
+    return `Excellent match - ${matched}/${total} skills align. Only ${total - matched} area(s) to develop.`;
+  } else if (percentage >= 70) {
+    return `Strong match - ${matched} of ${total} requirements met. Ready for role with minor growth.`;
+  } else if (percentage >= 50) {
+    return `Good match - ${matched}/${total} skills present. Build experience in missing areas.`;
+  } else if (percentage >= 30) {
+    return `Moderate alignment - ${matched} matching skill(s). Significant development needed.`;
+  } else if (percentage > 0) {
+    return `Limited match - ${matched} skill(s) align. Consider focused skill development.`;
   } else {
-    return `Limited match with ${matched} relevant skills. Substantial experience needed in ${missing} core requirement(s).`;
+    return 'Resume and job requirements need better alignment.';
   }
 }
