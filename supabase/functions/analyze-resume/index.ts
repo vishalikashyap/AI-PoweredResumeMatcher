@@ -61,12 +61,13 @@ function analyzeResume(resumeText: string, jobDescription: string): AnalysisResu
   const resumeLower = resumeText.toLowerCase();
   const jobDescLower = jobDescription.toLowerCase();
 
-  const skillKeywords = extractKeywords(jobDescLower);
+  const skillKeywords = extractSkillsFromJobDescription(jobDescLower);
   const matchedSkills: string[] = [];
   const missingSkills: string[] = [];
 
   skillKeywords.forEach((skill) => {
-    if (resumeLower.includes(skill.toLowerCase())) {
+    const skillLower = skill.toLowerCase().trim();
+    if (resumeLower.includes(skillLower)) {
       matchedSkills.push(skill);
     } else {
       missingSkills.push(skill);
@@ -91,36 +92,63 @@ function analyzeResume(resumeText: string, jobDescription: string): AnalysisResu
   };
 }
 
-function extractKeywords(text: string): string[] {
-  const commonSkills = [
+function extractSkillsFromJobDescription(jobDesc: string): string[] {
+  const skills: string[] = [];
+
+  const commonSkillPatterns = [
     'angular', 'react', 'vue', 'javascript', 'typescript', 'html', 'css',
-    'node.js', 'python', 'java', 'c++', 'c#', 'sql', 'mongodb', 'postgresql',
+    'node.js', 'nodejs', 'python', 'java', 'c++', 'c#', 'csharp', 'sql', 'mongodb', 'postgresql',
     'aws', 'azure', 'docker', 'kubernetes', 'git', 'agile', 'scrum',
-    'rest api', 'graphql', 'redux', 'rxjs', 'webpack', 'ci/cd',
+    'rest api', 'graphql', 'redux', 'rxjs', 'webpack', 'ci/cd', 'cicd',
     'microservices', 'testing', 'junit', 'jest', 'cypress', 'selenium',
-    'ux/ui', 'figma', 'responsive design', 'sass', 'tailwind',
-    'machine learning', 'ai', 'data structures', 'algorithms',
-    'leadership', 'communication', 'problem solving', 'teamwork'
+    'ux/ui', 'ui/ux', 'figma', 'responsive design', 'sass', 'tailwind',
+    'machine learning', 'artificial intelligence', 'ai', 'data structures', 'algorithms',
+    'leadership', 'communication', 'problem solving', 'teamwork', 'collaboration',
+    'firebase', 'supabase', 'mysql', 'mysql', 'rest', 'api', 'web development',
+    'mobile development', 'ios', 'android', 'react native', 'flutter',
+    'oops', 'oop', 'design patterns', 'mvc', 'mvvm'
   ];
 
-  const foundSkills = commonSkills.filter(skill => text.includes(skill));
+  for (const skill of commonSkillPatterns) {
+    if (jobDesc.includes(skill)) {
+      const capitalizedSkill = skill.charAt(0).toUpperCase() + skill.slice(1);
+      skills.push(capitalizedSkill);
+    }
+  }
 
-  const words = text.split(/\s+/);
-  const technicalTerms = words.filter(word => {
-    return word.length > 3 &&
-           /^[a-z0-9.#+/-]+$/.test(word) &&
-           !['the', 'and', 'with', 'for', 'this', 'that', 'have', 'from', 'will', 'your'].includes(word);
-  });
+  const lines = jobDesc.split(/[\n\r]+/);
+  for (const line of lines) {
+    const parts = line.split(/[:;,]/);
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i].trim();
 
-  const uniqueSkills = [...new Set([...foundSkills, ...technicalTerms.slice(0, 10)])];
-  return uniqueSkills.slice(0, 20);
+      if (part.length > 2 && part.length < 50) {
+        const keywords = part.split(/\s+/);
+        const validKeyword = keywords
+          .filter(kw => kw.length > 2 && kw.length < 30 && /^[a-zA-Z0-9.+#/\-()]+$/.test(kw))
+          .join(' ');
+
+        if (validKeyword && validKeyword.length > 2 && validKeyword.length < 40) {
+          const capitalizedKeyword = validKeyword.charAt(0).toUpperCase() + validKeyword.slice(1);
+          if (!skills.includes(capitalizedKeyword) && !commonSkillPatterns.includes(capitalizedKeyword.toLowerCase())) {
+            skills.push(capitalizedKeyword);
+          }
+        }
+      }
+    }
+  }
+
+  const uniqueSkills = [...new Set(skills)];
+  return uniqueSkills.slice(0, 25);
 }
 
 function identifyStrengths(resumeText: string, matchedSkills: string[]): string[] {
   const strengths: string[] = [];
 
   if (matchedSkills.length > 5) {
-    strengths.push(`Strong technical skill set with ${matchedSkills.length} matching competencies`);
+    strengths.push(`Strong match with ${matchedSkills.length} key requirements`);
+  } else if (matchedSkills.length > 0) {
+    strengths.push(`Demonstrates ${matchedSkills.length} required skills`);
   }
 
   if (resumeText.includes('lead') || resumeText.includes('senior') || resumeText.includes('manager')) {
@@ -128,49 +156,58 @@ function identifyStrengths(resumeText: string, matchedSkills: string[]): string[
   }
 
   if (resumeText.includes('project') && resumeText.includes('team')) {
-    strengths.push('Experience with team collaboration and project delivery');
+    strengths.push('Proven experience with team collaboration and project delivery');
   }
 
   if (resumeText.includes('bachelor') || resumeText.includes('master') || resumeText.includes('phd')) {
-    strengths.push('Relevant educational background');
+    strengths.push('Strong educational background');
   }
 
-  return strengths.length > 0 ? strengths : ['Candidate shows relevant experience in the field'];
+  if (resumeText.includes('years') || resumeText.includes('experience')) {
+    strengths.push('Relevant professional experience');
+  }
+
+  return strengths.length > 0 ? strengths : ['Review resume for relevant qualifications'];
 }
 
 function generateRecommendations(missingSkills: string[], matchPercentage: number): string[] {
   const recommendations: string[] = [];
 
-  if (matchPercentage < 50) {
-    recommendations.push('Consider gaining more experience in the core requirements of this role');
+  if (matchPercentage >= 80) {
+    recommendations.push('Excellent fit - highlight your matching expertise in your application');
+  } else if (matchPercentage >= 60) {
+    recommendations.push('Good match - consider emphasizing your strongest matching skills');
+  } else if (matchPercentage < 50) {
+    recommendations.push('Consider developing more of the required skills');
   }
 
-  if (missingSkills.length > 0) {
+  if (missingSkills.length > 0 && missingSkills.length <= 3) {
     const topMissing = missingSkills.slice(0, 3).join(', ');
-    recommendations.push(`Focus on developing skills in: ${topMissing}`);
+    recommendations.push(`Focus on: ${topMissing}`);
+  } else if (missingSkills.length > 3) {
+    const topMissing = missingSkills.slice(0, 2).join(', ');
+    recommendations.push(`Priority skills to develop: ${topMissing}`);
   }
 
-  if (matchPercentage >= 70) {
-    recommendations.push('Strong candidate - consider highlighting specific project achievements');
-  }
-
-  if (missingSkills.some(s => ['leadership', 'communication', 'teamwork'].includes(s))) {
-    recommendations.push('Emphasize soft skills and team collaboration experiences');
+  if (matchPercentage < 40) {
+    recommendations.push('Consider additional training or courses to meet job requirements');
   }
 
   return recommendations.length > 0
     ? recommendations
-    : ['Continue building relevant experience and update resume with recent projects'];
+    : ['Ensure resume includes all relevant experience and certifications'];
 }
 
 function generateSummary(matchPercentage: number, matched: number, missing: number): string {
   if (matchPercentage >= 80) {
-    return `Excellent match! The resume demonstrates ${matched} key qualifications with only ${missing} areas for potential growth.`;
+    return `Excellent match! Your resume shows ${matched} key qualifications required for this role.`;
   } else if (matchPercentage >= 60) {
-    return `Good match with ${matched} relevant qualifications. ${missing} additional skills could strengthen the application.`;
+    return `Good match with ${matched} relevant qualifications. Develop ${missing} additional skills to strengthen your candidacy.`;
   } else if (matchPercentage >= 40) {
-    return `Moderate match with ${matched} relevant qualifications. Consider developing ${missing} additional areas to better align with the role.`;
+    return `Moderate match with ${matched} relevant qualifications. Focus on developing ${missing} key areas.`;
+  } else if (matchPercentage >= 20) {
+    return `Limited match - ${matched} qualifications match. Significant skill development needed in ${missing} areas.`;
   } else {
-    return `The resume shows ${matched} relevant qualifications. Significant development needed in ${missing} key areas to match the job requirements.`;
+    return `Entry-level match. Your resume shows ${matched} matching skills. Consider gaining experience in ${missing} key requirements.`;
   }
 }
