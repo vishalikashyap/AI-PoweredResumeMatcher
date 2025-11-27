@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { supabase } from '../supabase';
 
 export interface AnalysisResult {
   matchPercentage: number;
@@ -113,38 +112,6 @@ export class ResumeAnalyzerService {
     resumeText: string,
     analysisResult: AnalysisResult
   ): Promise<void> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      const { data: jobDesc, error: jobError } = await supabase
-        .from('job_descriptions')
-        .insert({
-          user_id: user.id,
-          title: jobTitle,
-          description: jobDescription
-        })
-        .select()
-        .single();
-
-      if (jobError) throw jobError;
-
-      const { error: analysisError } = await supabase
-        .from('resume_analyses')
-        .insert({
-          user_id: user.id,
-          job_description_id: jobDesc.id,
-          resume_text: resumeText,
-          match_percentage: analysisResult.matchPercentage,
-          analysis_details: analysisResult
-        });
-
-      if (analysisError) throw analysisError;
-    } catch (error) {
-      console.error('Error saving analysis:', error);
-    }
+    console.log('Analysis complete for:', jobTitle);
   }
 }

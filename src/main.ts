@@ -274,15 +274,7 @@ export class App {
     try {
       const resumeText = await this.analyzerService.extractTextFromFile(this.selectedFile);
       const result = await this.analyzerService.analyzeResume(resumeText, jobDescription.description);
-
       this.analysisResult = result;
-
-      await this.analyzerService.saveAnalysis(
-        jobDescription.title,
-        jobDescription.description,
-        resumeText,
-        result
-      );
     } catch (err) {
       this.error = 'Failed to analyze resume. Please try again.';
       console.error('Analysis error:', err);
