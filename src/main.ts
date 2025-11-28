@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FileUploadComponent } from './components/file-upload.component';
 import { JobDescriptionFormComponent, JobDescription } from './components/job-description-form.component';
 import { AnalysisResultsComponent, AnalysisResult } from './components/analysis-results.component';
+import { ExtractionPreviewComponent, ExtractionData } from './components/extraction-preview.component';
 import { ResumeAnalyzerService } from './services/resume-analyzer.service';
 
 @Component({
@@ -13,7 +14,8 @@ import { ResumeAnalyzerService } from './services/resume-analyzer.service';
     CommonModule,
     FileUploadComponent,
     JobDescriptionFormComponent,
-    AnalysisResultsComponent
+    AnalysisResultsComponent,
+    ExtractionPreviewComponent
   ],
   providers: [ResumeAnalyzerService],
   template: `
@@ -59,6 +61,9 @@ import { ResumeAnalyzerService } from './services/resume-analyzer.service';
             </svg>
             New Analysis
           </button>
+
+          <app-extraction-preview [data]="extractionData"></app-extraction-preview>
+
           <app-analysis-results [result]="analysisResult"></app-analysis-results>
         </div>
       }
@@ -252,6 +257,7 @@ import { ResumeAnalyzerService } from './services/resume-analyzer.service';
 export class App {
   selectedFile: File | null = null;
   analysisResult: AnalysisResult | null = null;
+  extractionData: ExtractionData | null = null;
   isLoading = false;
   error: string | null = null;
 
@@ -275,6 +281,12 @@ export class App {
       const resumeText = await this.analyzerService.extractTextFromFile(this.selectedFile);
       const result = await this.analyzerService.analyzeResume(resumeText, jobDescription.description);
       this.analysisResult = result;
+      this.extractionData = {
+        resumeText: result.resumeText,
+        resumeSkills: result.resumeSkills,
+        jobDescriptionText: result.jobDescriptionText,
+        jobRequiredSkills: result.jobRequiredSkills,
+      };
     } catch (err) {
       this.error = 'Failed to analyze resume. Please try again.';
       console.error('Analysis error:', err);
@@ -285,6 +297,7 @@ export class App {
 
   resetAnalysis() {
     this.analysisResult = null;
+    this.extractionData = null;
     this.selectedFile = null;
     this.error = null;
   }

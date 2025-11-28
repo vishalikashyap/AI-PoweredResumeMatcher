@@ -7,6 +7,10 @@ export interface AnalysisResult {
   strengths: string[];
   recommendations: string[];
   summary: string;
+  resumeText: string;
+  resumeSkills: string[];
+  jobDescriptionText: string;
+  jobRequiredSkills: string[];
 }
 
 @Injectable({
